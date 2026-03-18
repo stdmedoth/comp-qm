@@ -18,7 +18,8 @@ program e1
         subroutine calculate_area(r, result)
             real, intent(in) ::   r
             real, intent(out) :: result
-            result =  3.14159265358979323846 * r * r
+            real :: pi = 3.14159265358979323846
+            result =  pi * r * r
 
         end subroutine
         
