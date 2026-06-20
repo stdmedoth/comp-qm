@@ -1,0 +1,53 @@
+program q4
+
+    implicit none
+
+    integer :: i, i2, e_interval, x_interval, n
+    real(8) :: ef, ei, de, e, theo_e, e_root
+    real(8) :: xf, xi, dx, x
+    real(8) :: phi_prev, phi_next, phi_cur, d2phi
+    real(8) :: phi_end_cur, phi_end_prev
+
+    ei = 0.0d0
+    ef = 50.0d0
+    de = 1e-4
+    e = ei
+
+    e_interval = int((ef-ei)/de)
+
+    xi = 0.0d0
+    xf = 1.0d0
+    dx = 1e-4
+    x = xi
+    x_interval = int((xf-xi)/dx)
+    
+    n = 0
+
+    do i=0, e_interval
+        e = e + de
+
+        phi_prev = 0.0d0
+        phi_cur = phi_prev + dx*1.0d0
+
+        do i2=2, x_interval
+            d2phi = -2*e*phi_cur
+            phi_next = 2*phi_cur - phi_prev + dx**2*d2phi
+            phi_prev = phi_cur
+            phi_cur = phi_next
+            x = x + dx
+
+        end do 
+        
+        phi_end_cur = phi_cur
+        if(e > de .and. (phi_end_prev * phi_end_cur < 0.0d0) ) then        
+            n = n+1
+            theo_e = (n**2*acos(-1.0d0)**2/2)
+            !e_root = (e-de) + de*abs(phi_end_prev)/(abs(phi_end_prev) + abs(phi_end_cur))
+            !print *, n, 'energia:' , e_root, theo_e, 'error:', e_root - theo_e
+            print *, n, 'energia:' , e, theo_e, 'error:', e - theo_e
+        end if
+
+        phi_end_prev = phi_end_cur
+        if (n == 3) exit
+    end do
+end program

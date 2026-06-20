@@ -1,61 +1,67 @@
 program ex1
-    real(8) :: del, r, u, x_new, p
-    real(8) :: xi(100000)
-    real(8) :: xi_mean, xi_xii_mean, xi_squared_mean, ck
-    integer :: N, accepted, k
-
-    call random_seed()
-    N = 100000
+    integer :: N
+    real(8) :: rn, del, proposal_x
+    real(8) :: acceptance_ratio
+    real(8), dimension(10000) :: x
+    real(8) :: mean_xi_xipk, mean_xi, mean_squared_xi, mean_xi_squared
     
-    x_new = 0
-    xi(1) = 0
-    del = 2.5
+    integer :: i, accepted
+    call random_seed()
+    x(1) = 0
+    del = 20d0
+    N = 1e4
     accepted = 0
-    do i=1, N-1
-        call random_number(r)
-        r = -1 + 2*r
-        x_new = xi(i) + del*r
 
-        p = exp(0.5*(xi(i)*xi(i) - x_new*x_new))
-        !print *, x_new, xi(i), p, del*r
-        call random_number(u)
-        if(u<p) then
-            xi(i+1) = x_new
-            accepted = accepted + 1
+    do i=1, N-1
+        call random_number(rn)
+        rn = -1 + 2*rn ! -interval + length * number 
+        !print *, rn
+        proposal_x = x(i) + del*rn
+        acceptance_ratio = exp((x(i)**2 - proposal_x**2)/2)
+        
+        call random_number(rn)
+        if(rn < acceptance_ratio)then
+            x(i+1) = proposal_x
+            accepted = accepted+1
         else
-            xi(i+1) = xi(i)
+            x(i+1) = x(i)
         end if
     end do
-    print *, 'Aceitação: ', real(accepted)/real(N-1)
+    print *, "Acceptance ratio" , real(accepted)/real(N-1)
 
-    
-    open(1, file='graph_xi.csv')
+    ! ploting x for steps
+    open(1, file='xi.csv')
     do i=1, N-1
-        write(1, '(I8, A, F5.2)') i, ',', xi(i)
-    end do
-
-    close(1)
-
-    open(1, file='graph_corr.csv')
-
-    do i=1, N-1
-        do k=0, i
-            if (i+k > N-1) then
-                exit
-            end if
-            xi_xii_mean = xi_xii_mean + xi(i)*xi(i+k)
-            xi_mean = xi_mean + xi(i)
-            xi_squared_mean = xi_squared_mean + xi(i)*xi(i)
-            ck = (xi_xii_mean/i - (xi_mean/i)*(xi_mean/i))/(xi_squared_mean/i - xi_mean*xi_mean)
-        end do
-        write(1, '(I8, A, F8.2)') k, ',', ck
+        write (1, *) i, x(i)
     end do
     close(1)
 
-    open(1, file='graph_hist.csv')
-    do i=1, N-1
-        write(1, '(F8.2)') xi(i)
+    open(1, file='ck.csv')
+
+    ! ploting the autocorrelation
+    do k=1, 100
+        mean_xi_xipk = 0
+        mean_xi = 0
+        mean_xi_squared = 0
+        mean_squared_xi = 0
+        do i=1, N-k
+            mean_xi_xipk = mean_xi_xipk + x(i)*x(i+k)
+            mean_xi = mean_xi + x(i)
+            mean_squared_xi = mean_squared_xi + x(i)*x(i)
+            
+        end do 
+        mean_xi_xipk = mean_xi_xipk/real(N-k)
+        mean_xi = mean_xi/real(N-k)
+        mean_squared_xi = mean_squared_xi/real(N-k)
+        mean_xi_squared = (mean_xi*mean_xi)
+        write (1, *) k,  (mean_xi_xipk - mean_xi_squared)/(mean_squared_xi - mean_xi_squared)
     end do
     close(1)
 
-end program 
+    open(1, file='hist.dat')
+    do i=1, N-1
+        write(1, *) x(i)
+    end do
+    close(1)
+
+end program
